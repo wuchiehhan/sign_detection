@@ -1,7 +1,11 @@
-function result = classify(img, cleanImg, templates, binSize, threshold, debug)
+function [  ] = classify(img, cleanImg, templates, binSize, threshold, ...
+                         dirName, fileName, debug, crop)
+f = figure;
+imshow(img);
 [labelMap, num] = bwlabel(cleanImg, 8);
 for n = 1 : num
     display(['--Working on region ', num2str(n),'/', num2str(num), '...']);
+    
     [r, c] = find(labelMap == n);
     r1 = min(r);
     r2 = max(r);
@@ -9,45 +13,23 @@ for n = 1 : num
     c2 = max(c);
     
     roi = img(r1 : r2, c1 : c2, :);
-    %imwrite(roi, ['images/' filename(1 : end - 4) '_' num2str(n) '.jpg']);
+    if crop == 2
+        imwrite(roi, [dirName '_cropped/' fileName(1 : end - 4) '_' num2str(n) '.jpg']);
+    end
     if debug == 1
-        img(r1 : r2, c1, 1) = 0;
-        img(r1 : r2, c1, 2) = 0;
-        img(r1 : r2, c1, 3) = 255;
-
-        img(r1 : r2, c2, 1) = 0;
-        img(r1 : r2, c2, 2) = 0;
-        img(r1 : r2, c2, 3) = 255;
-
-        img(r1, c1 : c2, 1) = 0;
-        img(r1, c1 : c2, 2) = 0;
-        img(r1, c1 : c2, 3) = 255;
-
-        img(r2, c1 : c2, 1) = 0;
-        img(r2, c1 : c2, 2) = 0;
-        img(r2, c1 : c2, 3) = 255;
+        rectangle('Position', [c1, r1, c2 - c1, r2 - r1], 'EdgeColor', 'blue', 'LineWidth', 1);
     end
     
-    roi = im2double(rgb2gray(roi));
-    roi = imresize(roi, [32 32], 'nearest');
-    H = hog(single(roi), binSize);
+    roi_gray = im2double(rgb2gray(roi));
+    roi_gray = imresize(roi_gray, [32 32], 'nearest');
+    H = hog(single(roi_gray), binSize);
         
     if(min(pdist2(templates, H(:)', 'cosine')) < threshold)
-        img(r1 : r2, c1, 1) = 255;
-        img(r1 : r2, c1, 2) = 0;
-        img(r1 : r2, c1, 3) = 0;
-
-        img(r1 : r2, c2, 1) = 255;
-        img(r1 : r2, c2, 2) = 0;
-        img(r1 : r2, c2, 3) = 0;
-            
-        img(r1, c1 : c2, 1) = 255;
-        img(r1, c1 : c2, 2) = 0;
-        img(r1, c1 : c2, 3) = 0;
-            
-        img(r2, c1 : c2, 1) = 255;
-        img(r2, c1 : c2, 2) = 0;
-        img(r2, c1 : c2, 3) = 0;
+        rectangle('Position', [c1, r1, c2 - c1, r2 - r1], 'EdgeColor', 'red', 'LineWidth', 1);
+        if crop == 1
+            imwrite(roi, [dirName '_cropped/' fileName(1 : end - 4) '_' num2str(n) '.jpg']);
+        end
     end
 end
-result = img;
+saveas(f, [dirName '_result/' fileName]);
+close(f);
